@@ -7,6 +7,8 @@ export interface Task {
   dueDate: number | null
   /** Timestamp when the task was marked complete, or null. */
   completedAt: number | null
+  /** Project / category name. Empty string means uncategorized. */
+  project: string
 }
 
 export type TaskFilter =

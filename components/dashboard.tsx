@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   CalendarClock,
   CheckCircle2,
+  FolderKanban,
   LayoutDashboard,
   ListTodo,
 } from "lucide-react"
@@ -13,6 +14,7 @@ import type { TaskFilter } from "@/lib/types"
 import { useTasks } from "@/hooks/use-tasks"
 import { useNow } from "@/hooks/use-now"
 import { DAY_MS, startOfDay, WEEKDAYS_KO } from "@/lib/date"
+import { groupByProject, type ProjectGroup } from "@/lib/project"
 
 interface TrendPoint {
   label: string
@@ -28,6 +30,7 @@ interface Stats {
   pct: number
   trend: TrendPoint[]
   max: number
+  projects: ProjectGroup[]
 }
 
 const EMPTY_STATS: Stats = {
@@ -42,14 +45,22 @@ const EMPTY_STATS: Stats = {
     isToday: false,
   })),
   max: 1,
+  projects: [],
 }
 
 interface DashboardProps {
   activeFilter: TaskFilter
   onSelectFilter: (filter: TaskFilter) => void
+  activeProject: string | null
+  onSelectProject: (project: string | null) => void
 }
 
-export function Dashboard({ activeFilter, onSelectFilter }: DashboardProps) {
+export function Dashboard({
+  activeFilter,
+  onSelectFilter,
+  activeProject,
+  onSelectProject,
+}: DashboardProps) {
   const { tasks, hydrated } = useTasks()
   const now = useNow()
 
@@ -81,7 +92,9 @@ export function Dashboard({ activeFilter, onSelectFilter }: DashboardProps) {
     }))
     const max = Math.max(1, ...trend.map((d) => d.count))
 
-    return { total, completed, dueToday, overdue, pct, trend, max }
+    const projects = groupByProject(tasks)
+
+    return { total, completed, dueToday, overdue, pct, trend, max, projects }
   }, [tasks, hydrated, now])
 
   const cards = [
@@ -200,6 +213,78 @@ export function Dashboard({ activeFilter, onSelectFilter }: DashboardProps) {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="dash__projects">
+        <div className="dash__projects-top">
+          <span className="dash__projects-title">
+            <FolderKanban />
+            프로젝트별 분포
+          </span>
+          {activeProject !== null && (
+            <button
+              type="button"
+              className="dash__projects-clear"
+              onClick={() => onSelectProject(null)}
+            >
+              필터 해제
+            </button>
+          )}
+        </div>
+
+        {stats.projects.length === 0 ? (
+          <p className="dash__projects-empty">
+            작업에 프로젝트를 지정하면 분포가 표시됩니다.
+          </p>
+        ) : (
+          <>
+            <div
+              className="distbar"
+              role="img"
+              aria-label="프로젝트별 작업 분포"
+            >
+              {stats.projects.map((group) => (
+                <div
+                  key={group.name}
+                  className="distbar__seg"
+                  style={{
+                    width: `${(group.total / stats.total) * 100}%`,
+                    backgroundColor: group.color,
+                  }}
+                  title={`${group.name} ${group.total}개`}
+                />
+              ))}
+            </div>
+
+            <ul className="proj-legend">
+              {stats.projects.map((group) => {
+                const pct = Math.round((group.total / stats.total) * 100)
+                const isActive = activeProject === group.name
+                return (
+                  <li key={group.name}>
+                    <button
+                      type="button"
+                      className={`proj${isActive ? " proj--active" : ""}`}
+                      aria-pressed={isActive}
+                      onClick={() =>
+                        onSelectProject(isActive ? null : group.name)
+                      }
+                    >
+                      <span
+                        className="proj__dot"
+                        style={{ backgroundColor: group.color }}
+                      />
+                      <span className="proj__name">{group.name}</span>
+                      <span className="proj__meta">
+                        {group.completed}/{group.total} · {pct}%
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </>
+        )}
       </div>
     </section>
   )

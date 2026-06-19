@@ -7,6 +7,7 @@ import {
   ListTodo,
   Pencil,
   Plus,
+  Tag,
   Trash2,
   X,
 } from "lucide-react"
@@ -17,6 +18,7 @@ import { useNow } from "@/hooks/use-now"
 import { cn } from "@/lib/utils"
 import { formatDue, parseDateInput, toDateInputValue } from "@/lib/date"
 import { matchesFilter } from "@/lib/filter"
+import { matchesProject, projectNames } from "@/lib/project"
 import { Button } from "@/components/ui/button"
 
 const FILTERS: { value: TaskFilter; label: string }[] = [
@@ -28,9 +30,16 @@ const FILTERS: { value: TaskFilter; label: string }[] = [
 interface TaskManagerProps {
   filter: TaskFilter
   onFilterChange: (filter: TaskFilter) => void
+  projectFilter: string | null
+  onProjectFilterChange: (project: string | null) => void
 }
 
-export function TaskManager({ filter, onFilterChange }: TaskManagerProps) {
+export function TaskManager({
+  filter,
+  onFilterChange,
+  projectFilter,
+  onProjectFilterChange,
+}: TaskManagerProps) {
   const {
     tasks,
     hydrated,
@@ -42,34 +51,43 @@ export function TaskManager({ filter, onFilterChange }: TaskManagerProps) {
   } = useTasks()
   const [draft, setDraft] = React.useState("")
   const [due, setDue] = React.useState("")
+  const [project, setProject] = React.useState("")
   const [editingId, setEditingId] = React.useState<string | null>(null)
   const [editTitle, setEditTitle] = React.useState("")
   const [editDue, setEditDue] = React.useState("")
+  const [editProject, setEditProject] = React.useState("")
 
   const total = tasks.length
   const completed = tasks.filter((task) => task.completed).length
   const remaining = total - completed
   const now = useNow()
 
-  const visibleTasks = tasks.filter((task) => matchesFilter(task, filter, now))
+  const knownProjects = projectNames(tasks)
+  const visibleTasks = tasks.filter(
+    (task) =>
+      matchesFilter(task, filter, now) && matchesProject(task, projectFilter)
+  )
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    addTask(draft, parseDateInput(due))
+    addTask(draft, parseDateInput(due), project)
     setDraft("")
     setDue("")
+    setProject("")
   }
 
   function startEdit(task: Task) {
     setEditingId(task.id)
     setEditTitle(task.title)
     setEditDue(task.dueDate !== null ? toDateInputValue(task.dueDate) : "")
+    setEditProject(task.project)
   }
 
   function cancelEdit() {
     setEditingId(null)
     setEditTitle("")
     setEditDue("")
+    setEditProject("")
   }
 
   function saveEdit(event: React.FormEvent<HTMLFormElement>) {
@@ -80,6 +98,7 @@ export function TaskManager({ filter, onFilterChange }: TaskManagerProps) {
     updateTask(editingId, {
       title: editTitle,
       dueDate: parseDateInput(editDue),
+      project: editProject,
     })
     cancelEdit()
   }
@@ -100,6 +119,12 @@ export function TaskManager({ filter, onFilterChange }: TaskManagerProps) {
         </div>
       </header>
 
+      <datalist id="tm-projects">
+        {knownProjects.map((name) => (
+          <option key={name} value={name} />
+        ))}
+      </datalist>
+
       <form onSubmit={handleSubmit} className="tm__form">
         <input
           value={draft}
@@ -107,6 +132,14 @@ export function TaskManager({ filter, onFilterChange }: TaskManagerProps) {
           placeholder="할 일을 입력하세요…"
           aria-label="새 할 일"
           className="tm__input"
+        />
+        <input
+          value={project}
+          onChange={(event) => setProject(event.target.value)}
+          placeholder="프로젝트 (선택)"
+          aria-label="프로젝트 (선택)"
+          list="tm-projects"
+          className="tm__project-input"
         />
         <input
           type="date"
@@ -168,6 +201,22 @@ export function TaskManager({ filter, onFilterChange }: TaskManagerProps) {
         </div>
       )}
 
+      {projectFilter !== null && (
+        <div className="tm__viewbar">
+          <span>
+            프로젝트 <strong>{projectFilter}</strong> 작업만 표시 중
+          </span>
+          <Button
+            type="button"
+            size="xs"
+            variant="ghost"
+            onClick={() => onProjectFilterChange(null)}
+          >
+            전체 보기
+          </Button>
+        </div>
+      )}
+
       <ul className="tm__list">
         {!hydrated ? (
           <li className="tm__empty">불러오는 중…</li>
@@ -193,6 +242,14 @@ export function TaskManager({ filter, onFilterChange }: TaskManagerProps) {
                       aria-label="할 일 수정"
                       className="tm__input tm__edit-title"
                       autoFocus
+                    />
+                    <input
+                      value={editProject}
+                      onChange={(event) => setEditProject(event.target.value)}
+                      placeholder="프로젝트"
+                      aria-label="프로젝트 수정"
+                      list="tm-projects"
+                      className="tm__project-input tm__edit-project"
                     />
                     <input
                       type="date"
@@ -257,6 +314,18 @@ export function TaskManager({ filter, onFilterChange }: TaskManagerProps) {
                 >
                   {task.title}
                 </span>
+
+                {task.project && (
+                  <button
+                    type="button"
+                    className="tm__tag"
+                    onClick={() => onProjectFilterChange(task.project)}
+                    title={`${task.project} 작업만 보기`}
+                  >
+                    <Tag />
+                    {task.project}
+                  </button>
+                )}
 
                 {dueInfo && (
                   <span className={`tm__due tm__due--${dueInfo.tone}`}>

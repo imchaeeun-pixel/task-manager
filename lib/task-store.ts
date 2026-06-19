@@ -38,6 +38,7 @@ function normalize(value: Partial<Task> & Pick<Task, "id" | "title" | "completed
     createdAt: typeof value.createdAt === "number" ? value.createdAt : 0,
     dueDate: typeof value.dueDate === "number" ? value.dueDate : null,
     completedAt: typeof value.completedAt === "number" ? value.completedAt : null,
+    project: typeof value.project === "string" ? value.project : "",
   }
 }
 
@@ -104,7 +105,11 @@ export function getServerSnapshot(): Task[] {
   return EMPTY
 }
 
-export function addTask(title: string, dueDate: number | null = null) {
+export function addTask(
+  title: string,
+  dueDate: number | null = null,
+  project = ""
+) {
   const trimmed = title.trim()
   if (!trimmed) {
     return
@@ -118,6 +123,7 @@ export function addTask(title: string, dueDate: number | null = null) {
       createdAt: Date.now(),
       dueDate,
       completedAt: null,
+      project: project.trim(),
     },
     ...cache,
   ])
@@ -125,7 +131,7 @@ export function addTask(title: string, dueDate: number | null = null) {
 
 export function updateTask(
   id: string,
-  changes: { title?: string; dueDate?: number | null }
+  changes: { title?: string; dueDate?: number | null; project?: string }
 ) {
   ensureInitialized()
   commit(
@@ -142,6 +148,9 @@ export function updateTask(
       }
       if (changes.dueDate !== undefined) {
         next.dueDate = changes.dueDate
+      }
+      if (changes.project !== undefined) {
+        next.project = changes.project.trim()
       }
       return next
     })
