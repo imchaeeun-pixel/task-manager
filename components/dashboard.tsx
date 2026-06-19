@@ -9,6 +9,7 @@ import {
   ListTodo,
 } from "lucide-react"
 
+import type { TaskFilter } from "@/lib/types"
 import { useTasks } from "@/hooks/use-tasks"
 import { useNow } from "@/hooks/use-now"
 import { DAY_MS, startOfDay, WEEKDAYS_KO } from "@/lib/date"
@@ -43,7 +44,12 @@ const EMPTY_STATS: Stats = {
   max: 1,
 }
 
-export function Dashboard() {
+interface DashboardProps {
+  activeFilter: TaskFilter
+  onSelectFilter: (filter: TaskFilter) => void
+}
+
+export function Dashboard({ activeFilter, onSelectFilter }: DashboardProps) {
   const { tasks, hydrated } = useTasks()
   const now = useNow()
 
@@ -81,6 +87,7 @@ export function Dashboard() {
   const cards = [
     {
       key: "total",
+      filter: "all",
       label: "전체 작업",
       value: stats.total,
       tone: "brand",
@@ -88,6 +95,7 @@ export function Dashboard() {
     },
     {
       key: "completed",
+      filter: "completed",
       label: "완료 작업",
       value: stats.completed,
       tone: "success",
@@ -95,6 +103,7 @@ export function Dashboard() {
     },
     {
       key: "dueToday",
+      filter: "today",
       label: "오늘 마감",
       value: stats.dueToday,
       tone: "warning",
@@ -102,6 +111,7 @@ export function Dashboard() {
     },
     {
       key: "overdue",
+      filter: "overdue",
       label: "지연",
       value: stats.overdue,
       tone: "danger",
@@ -125,11 +135,19 @@ export function Dashboard() {
 
       <div className="dash__stats">
         {cards.map((card) => (
-          <div key={card.key} className={`stat stat--${card.tone}`}>
+          <button
+            key={card.key}
+            type="button"
+            className={`stat stat--${card.tone}${
+              activeFilter === card.filter ? " stat--active" : ""
+            }`}
+            aria-pressed={activeFilter === card.filter}
+            onClick={() => onSelectFilter(card.filter)}
+          >
             <div className="stat__icon">{card.icon}</div>
             <div className="stat__value">{card.value}</div>
             <div className="stat__label">{card.label}</div>
-          </div>
+          </button>
         ))}
       </div>
 

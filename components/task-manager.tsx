@@ -16,6 +16,7 @@ import { useTasks } from "@/hooks/use-tasks"
 import { useNow } from "@/hooks/use-now"
 import { cn } from "@/lib/utils"
 import { formatDue, parseDateInput, toDateInputValue } from "@/lib/date"
+import { matchesFilter } from "@/lib/filter"
 import { Button } from "@/components/ui/button"
 
 const FILTERS: { value: TaskFilter; label: string }[] = [
@@ -24,7 +25,12 @@ const FILTERS: { value: TaskFilter; label: string }[] = [
   { value: "completed", label: "완료" },
 ]
 
-export function TaskManager() {
+interface TaskManagerProps {
+  filter: TaskFilter
+  onFilterChange: (filter: TaskFilter) => void
+}
+
+export function TaskManager({ filter, onFilterChange }: TaskManagerProps) {
   const {
     tasks,
     hydrated,
@@ -36,7 +42,6 @@ export function TaskManager() {
   } = useTasks()
   const [draft, setDraft] = React.useState("")
   const [due, setDue] = React.useState("")
-  const [filter, setFilter] = React.useState<TaskFilter>("all")
   const [editingId, setEditingId] = React.useState<string | null>(null)
   const [editTitle, setEditTitle] = React.useState("")
   const [editDue, setEditDue] = React.useState("")
@@ -46,11 +51,7 @@ export function TaskManager() {
   const remaining = total - completed
   const now = useNow()
 
-  const visibleTasks = tasks.filter((task) => {
-    if (filter === "active") return !task.completed
-    if (filter === "completed") return task.completed
-    return true
-  })
+  const visibleTasks = tasks.filter((task) => matchesFilter(task, filter, now))
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -132,7 +133,7 @@ export function TaskManager() {
                 "tm__filter",
                 filter === item.value && "tm__filter--active"
               )}
-              onClick={() => setFilter(item.value)}
+              onClick={() => onFilterChange(item.value)}
             >
               {item.label}
             </button>
@@ -149,6 +150,23 @@ export function TaskManager() {
           </Button>
         )}
       </div>
+
+      {(filter === "today" || filter === "overdue") && (
+        <div className="tm__viewbar">
+          <span>
+            <strong>{filter === "today" ? "오늘 마감" : "지연"}</strong> 작업만
+            표시 중
+          </span>
+          <Button
+            type="button"
+            size="xs"
+            variant="ghost"
+            onClick={() => onFilterChange("all")}
+          >
+            전체 보기
+          </Button>
+        </div>
+      )}
 
       <ul className="tm__list">
         {!hydrated ? (

@@ -9,4 +9,9 @@ export interface Task {
   completedAt: number | null
 }
 
-export type TaskFilter = "all" | "active" | "completed"
+export type TaskFilter =
+  | "all"
+  | "active"
+  | "completed"
+  | "today"
+  | "overdue"
