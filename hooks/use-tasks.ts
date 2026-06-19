@@ -23,6 +23,7 @@ export function useTasks() {
     tasks,
     hydrated,
     addTask: store.addTask,
+    updateTask: store.updateTask,
     toggleTask: store.toggleTask,
     removeTask: store.removeTask,
     clearCompleted: store.clearCompleted,

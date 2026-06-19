@@ -544,15 +544,63 @@ kbd {
     text-decoration: line-through;
 }
 
-.tm__delete {
+.tm__actions {
+    display: flex;
+    gap: 0.1rem;
+    flex-shrink: 0;
     opacity: 0;
     transition: opacity 0.15s ease;
+}
+
+.tm__item:hover .tm__actions,
+.tm__actions:focus-within {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .tm__actions {
+        opacity: 1;
+    }
+}
+
+.tm__action {
+    color: var(--muted-foreground);
+}
+.tm__action:hover {
+    color: var(--foreground);
+}
+.tm__action--danger:hover {
     color: var(--destructive);
 }
 
-.tm__item:hover .tm__delete,
-.tm__delete:focus-visible {
-    opacity: 1;
+/* inline edit form */
+.tm__item--editing {
+    border-color: color-mix(in oklch, var(--brand), transparent 50%);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--brand), transparent 85%);
+}
+
+.tm__edit {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+}
+
+.tm__edit-title {
+    flex: 1 1 10rem;
+    height: 2.25rem;
+}
+
+.tm__edit-date {
+    flex: 0 1 auto;
+    height: 2.25rem;
+}
+
+.tm__edit-actions {
+    display: flex;
+    gap: 0.1rem;
+    margin-left: auto;
 }
 
 .tm__footer {

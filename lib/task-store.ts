@@ -123,6 +123,31 @@ export function addTask(title: string, dueDate: number | null = null) {
   ])
 }
 
+export function updateTask(
+  id: string,
+  changes: { title?: string; dueDate?: number | null }
+) {
+  ensureInitialized()
+  commit(
+    cache.map((task) => {
+      if (task.id !== id) {
+        return task
+      }
+      const next = { ...task }
+      if (changes.title !== undefined) {
+        const trimmed = changes.title.trim()
+        if (trimmed) {
+          next.title = trimmed
+        }
+      }
+      if (changes.dueDate !== undefined) {
+        next.dueDate = changes.dueDate
+      }
+      return next
+    })
+  )
+}
+
 export function toggleTask(id: string) {
   ensureInitialized()
   commit(

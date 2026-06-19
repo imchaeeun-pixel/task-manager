@@ -1,13 +1,21 @@
 "use client"
 
 import * as React from "react"
-import { Check, ClipboardList, ListTodo, Plus, Trash2 } from "lucide-react"
+import {
+  Check,
+  ClipboardList,
+  ListTodo,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react"
 
-import type { TaskFilter } from "@/lib/types"
+import type { Task, TaskFilter } from "@/lib/types"
 import { useTasks } from "@/hooks/use-tasks"
 import { useNow } from "@/hooks/use-now"
 import { cn } from "@/lib/utils"
-import { formatDue, parseDateInput } from "@/lib/date"
+import { formatDue, parseDateInput, toDateInputValue } from "@/lib/date"
 import { Button } from "@/components/ui/button"
 
 const FILTERS: { value: TaskFilter; label: string }[] = [
@@ -17,11 +25,21 @@ const FILTERS: { value: TaskFilter; label: string }[] = [
 ]
 
 export function TaskManager() {
-  const { tasks, hydrated, addTask, toggleTask, removeTask, clearCompleted } =
-    useTasks()
+  const {
+    tasks,
+    hydrated,
+    addTask,
+    updateTask,
+    toggleTask,
+    removeTask,
+    clearCompleted,
+  } = useTasks()
   const [draft, setDraft] = React.useState("")
   const [due, setDue] = React.useState("")
   const [filter, setFilter] = React.useState<TaskFilter>("all")
+  const [editingId, setEditingId] = React.useState<string | null>(null)
+  const [editTitle, setEditTitle] = React.useState("")
+  const [editDue, setEditDue] = React.useState("")
 
   const total = tasks.length
   const completed = tasks.filter((task) => task.completed).length
@@ -39,6 +57,30 @@ export function TaskManager() {
     addTask(draft, parseDateInput(due))
     setDraft("")
     setDue("")
+  }
+
+  function startEdit(task: Task) {
+    setEditingId(task.id)
+    setEditTitle(task.title)
+    setEditDue(task.dueDate !== null ? toDateInputValue(task.dueDate) : "")
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setEditTitle("")
+    setEditDue("")
+  }
+
+  function saveEdit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (editingId === null || !editTitle.trim()) {
+      return
+    }
+    updateTask(editingId, {
+      title: editTitle,
+      dueDate: parseDateInput(editDue),
+    })
+    cancelEdit()
   }
 
   return (
@@ -120,6 +162,52 @@ export function TaskManager() {
           </li>
         ) : (
           visibleTasks.map((task) => {
+            if (editingId === task.id) {
+              return (
+                <li key={task.id} className="tm__item tm__item--editing">
+                  <form className="tm__edit" onSubmit={saveEdit}>
+                    <input
+                      value={editTitle}
+                      onChange={(event) => setEditTitle(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Escape") cancelEdit()
+                      }}
+                      aria-label="할 일 수정"
+                      className="tm__input tm__edit-title"
+                      autoFocus
+                    />
+                    <input
+                      type="date"
+                      value={editDue}
+                      onChange={(event) => setEditDue(event.target.value)}
+                      aria-label="마감일 수정"
+                      className="tm__date tm__edit-date"
+                    />
+                    <div className="tm__edit-actions">
+                      <Button
+                        type="submit"
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label="저장"
+                        disabled={!editTitle.trim()}
+                      >
+                        <Check />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label="취소"
+                        onClick={cancelEdit}
+                      >
+                        <X />
+                      </Button>
+                    </div>
+                  </form>
+                </li>
+              )
+            }
+
             const dueInfo =
               task.dueDate !== null && !task.completed && now > 0
                 ? formatDue(task.dueDate, now)
@@ -146,6 +234,8 @@ export function TaskManager() {
                     "tm__label",
                     task.completed && "tm__label--done"
                   )}
+                  onDoubleClick={() => startEdit(task)}
+                  title="더블클릭하여 수정"
                 >
                   {task.title}
                 </span>
@@ -156,16 +246,28 @@ export function TaskManager() {
                   </span>
                 )}
 
-                <Button
-                  type="button"
-                  size="icon-sm"
-                  variant="ghost"
-                  aria-label="삭제"
-                  className="tm__delete"
-                  onClick={() => removeTask(task.id)}
-                >
-                  <Trash2 />
-                </Button>
+                <div className="tm__actions">
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label="수정"
+                    className="tm__action"
+                    onClick={() => startEdit(task)}
+                  >
+                    <Pencil />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label="삭제"
+                    className="tm__action tm__action--danger"
+                    onClick={() => removeTask(task.id)}
+                  >
+                    <Trash2 />
+                  </Button>
+                </div>
               </li>
             )
           })
