@@ -1,17 +1,13 @@
 "use client"
 
 import * as React from "react"
-import {
-  Check,
-  ClipboardList,
-  ListTodo,
-  Plus,
-  Trash2,
-} from "lucide-react"
+import { Check, ClipboardList, ListTodo, Plus, Trash2 } from "lucide-react"
 
 import type { TaskFilter } from "@/lib/types"
 import { useTasks } from "@/hooks/use-tasks"
+import { useNow } from "@/hooks/use-now"
 import { cn } from "@/lib/utils"
+import { formatDue, parseDateInput } from "@/lib/date"
 import { Button } from "@/components/ui/button"
 
 const FILTERS: { value: TaskFilter; label: string }[] = [
@@ -24,12 +20,13 @@ export function TaskManager() {
   const { tasks, hydrated, addTask, toggleTask, removeTask, clearCompleted } =
     useTasks()
   const [draft, setDraft] = React.useState("")
+  const [due, setDue] = React.useState("")
   const [filter, setFilter] = React.useState<TaskFilter>("all")
 
   const total = tasks.length
   const completed = tasks.filter((task) => task.completed).length
   const remaining = total - completed
-  const pct = total === 0 ? 0 : Math.round((completed / total) * 100)
+  const now = useNow()
 
   const visibleTasks = tasks.filter((task) => {
     if (filter === "active") return !task.completed
@@ -39,8 +36,9 @@ export function TaskManager() {
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    addTask(draft)
+    addTask(draft, parseDateInput(due))
     setDraft("")
+    setDue("")
   }
 
   return (
@@ -59,22 +57,6 @@ export function TaskManager() {
         </div>
       </header>
 
-      <section className="tm__progress" aria-hidden={total === 0}>
-        <div className="tm__progress-top">
-          <span>진행률</span>
-          <span className="tm__progress-pct">{pct}%</span>
-        </div>
-        <div
-          className="tm__progress-track"
-          role="progressbar"
-          aria-valuenow={pct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
-          <div className="tm__progress-fill" style={{ width: `${pct}%` }} />
-        </div>
-      </section>
-
       <form onSubmit={handleSubmit} className="tm__form">
         <input
           value={draft}
@@ -82,6 +64,13 @@ export function TaskManager() {
           placeholder="할 일을 입력하세요…"
           aria-label="새 할 일"
           className="tm__input"
+        />
+        <input
+          type="date"
+          value={due}
+          onChange={(event) => setDue(event.target.value)}
+          aria-label="마감일 (선택)"
+          className="tm__date"
         />
         <Button type="submit" size="lg" disabled={!draft.trim()}>
           <Plus />
@@ -130,43 +119,56 @@ export function TaskManager() {
               : "해당하는 할 일이 없습니다."}
           </li>
         ) : (
-          visibleTasks.map((task) => (
-            <li key={task.id} className="tm__item">
-              <button
-                type="button"
-                role="checkbox"
-                aria-checked={task.completed}
-                aria-label={task.completed ? "완료 취소" : "완료로 표시"}
-                onClick={() => toggleTask(task.id)}
-                className={cn(
-                  "tm__checkbox",
-                  task.completed && "tm__checkbox--checked"
-                )}
-              >
-                {task.completed && <Check />}
-              </button>
+          visibleTasks.map((task) => {
+            const dueInfo =
+              task.dueDate !== null && !task.completed && now > 0
+                ? formatDue(task.dueDate, now)
+                : null
 
-              <span
-                className={cn(
-                  "tm__label",
-                  task.completed && "tm__label--done"
-                )}
-              >
-                {task.title}
-              </span>
+            return (
+              <li key={task.id} className="tm__item">
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={task.completed}
+                  aria-label={task.completed ? "완료 취소" : "완료로 표시"}
+                  onClick={() => toggleTask(task.id)}
+                  className={cn(
+                    "tm__checkbox",
+                    task.completed && "tm__checkbox--checked"
+                  )}
+                >
+                  {task.completed && <Check />}
+                </button>
 
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="ghost"
-                aria-label="삭제"
-                className="tm__delete"
-                onClick={() => removeTask(task.id)}
-              >
-                <Trash2 />
-              </Button>
-            </li>
-          ))
+                <span
+                  className={cn(
+                    "tm__label",
+                    task.completed && "tm__label--done"
+                  )}
+                >
+                  {task.title}
+                </span>
+
+                {dueInfo && (
+                  <span className={`tm__due tm__due--${dueInfo.tone}`}>
+                    {dueInfo.text}
+                  </span>
+                )}
+
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label="삭제"
+                  className="tm__delete"
+                  onClick={() => removeTask(task.id)}
+                >
+                  <Trash2 />
+                </Button>
+              </li>
+            )
+          })
         )}
       </ul>
 

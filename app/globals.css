@@ -260,11 +260,18 @@ kbd {
     }
 }
 
+.app-shell {
+    display: flex;
+    width: 100%;
+    max-width: 34rem;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
 /* ---------- Task manager card ---------- */
 .tm {
     display: flex;
     width: 100%;
-    max-width: 30rem;
     flex-direction: column;
     gap: 1.25rem;
     padding: 1.5rem;
@@ -561,4 +568,304 @@ kbd {
     text-align: center;
     font-size: 0.75rem;
     color: var(--muted-foreground);
+}
+
+/* date input in the add form */
+.tm__date {
+    height: 2.75rem;
+    flex: 0 1 auto;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) * 1.25);
+    background-color: var(--card);
+    color: var(--foreground);
+    padding: 0 0.75rem;
+    font-size: 0.875rem;
+    font-family: inherit;
+}
+
+.tm__date:focus-visible {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--brand), transparent 80%);
+}
+
+/* due badge on a task item */
+.tm__due {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.tm__due--normal {
+    color: var(--muted-foreground);
+    background-color: var(--muted);
+}
+.tm__due--soon {
+    color: oklch(0.5 0.13 75);
+    background-color: oklch(0.92 0.07 85 / 0.6);
+}
+.tm__due--today {
+    color: oklch(0.5 0.16 50);
+    background-color: oklch(0.9 0.1 60 / 0.6);
+}
+.tm__due--overdue {
+    color: var(--destructive);
+    background-color: color-mix(in oklch, var(--destructive), transparent 86%);
+}
+
+.dark .tm__due--soon {
+    color: oklch(0.85 0.12 85);
+    background-color: oklch(0.5 0.09 80 / 0.3);
+}
+.dark .tm__due--today {
+    color: oklch(0.85 0.13 65);
+    background-color: oklch(0.55 0.12 55 / 0.3);
+}
+
+/* ---------- Dashboard card ---------- */
+.dash {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    background-color: color-mix(in oklch, var(--card), transparent 8%);
+    backdrop-filter: blur(8px);
+    border: 1px solid color-mix(in oklch, var(--border), transparent 20%);
+    border-radius: calc(var(--radius) * 2);
+    box-shadow: var(--shadow-card);
+}
+
+@media (min-width: 640px) {
+    .dash {
+        padding: 2rem;
+    }
+}
+
+.dash__header {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+}
+
+.dash__logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    border-radius: calc(var(--radius) * 1.25);
+    background-image: linear-gradient(135deg, var(--brand-2), var(--brand));
+    color: var(--brand-foreground);
+    box-shadow: 0 8px 18px -6px color-mix(in oklch, var(--brand), transparent 35%);
+}
+
+.dash__logo svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.dash__heading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.dash__title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+.dash__subtitle {
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+}
+
+/* stat cards */
+.dash__stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+@media (min-width: 520px) {
+    .dash__stats {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) * 1.25);
+    background-color: var(--card);
+}
+
+.stat__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.85rem;
+    height: 1.85rem;
+    border-radius: 0.625rem;
+}
+
+.stat__icon svg {
+    width: 1.05rem;
+    height: 1.05rem;
+}
+
+.stat__value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+.stat__label {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+}
+
+.stat--brand .stat__icon {
+    color: var(--brand);
+    background-color: color-mix(in oklch, var(--brand), transparent 88%);
+}
+.stat--success .stat__icon {
+    color: oklch(0.6 0.15 150);
+    background-color: oklch(0.6 0.15 150 / 0.12);
+}
+.stat--warning .stat__icon {
+    color: oklch(0.62 0.15 65);
+    background-color: oklch(0.62 0.15 65 / 0.14);
+}
+.stat--danger .stat__icon {
+    color: var(--destructive);
+    background-color: color-mix(in oklch, var(--destructive), transparent 88%);
+}
+
+/* dashboard progress */
+.dash__progress {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.dash__progress-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+}
+
+.dash__progress-pct {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--foreground);
+}
+
+.dash__progress-track {
+    height: 0.6rem;
+    width: 100%;
+    border-radius: 999px;
+    background-color: var(--muted);
+    overflow: hidden;
+}
+
+.dash__progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background-image: linear-gradient(90deg, var(--brand), var(--brand-2));
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dash__progress-meta {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+}
+
+/* trend chart */
+.dash__trend {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.dash__trend-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+}
+
+.dash__trend-sum {
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.4rem;
+    height: 7rem;
+}
+
+.chart__col {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    height: 100%;
+}
+
+.chart__bar-wrap {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.2rem;
+    min-height: 0;
+}
+
+.chart__count {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--muted-foreground);
+}
+
+.chart__bar {
+    width: 100%;
+    max-width: 2rem;
+    min-height: 0.25rem;
+    border-radius: 0.4rem 0.4rem 0.2rem 0.2rem;
+    background-color: color-mix(in oklch, var(--brand), transparent 65%);
+    transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chart__bar--today {
+    background-image: linear-gradient(180deg, var(--brand), var(--brand-2));
+}
+
+.chart__label {
+    font-size: 0.7rem;
+    color: var(--muted-foreground);
+}
+
+.chart__label--today {
+    font-weight: 700;
+    color: var(--brand);
 }

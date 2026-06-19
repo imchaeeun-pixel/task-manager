@@ -15,7 +15,11 @@ function createId() {
   return `${Date.now()}-${Math.floor(Math.random() * 1e9)}`
 }
 
-function isTask(value: unknown): value is Task {
+function isTaskLike(value: unknown): value is Partial<Task> & {
+  id: string
+  title: string
+  completed: boolean
+} {
   return (
     typeof value === "object" &&
     value !== null &&
@@ -23,6 +27,18 @@ function isTask(value: unknown): value is Task {
     typeof (value as Task).title === "string" &&
     typeof (value as Task).completed === "boolean"
   )
+}
+
+// Fill in fields that may be missing from data saved by older versions.
+function normalize(value: Partial<Task> & Pick<Task, "id" | "title" | "completed">): Task {
+  return {
+    id: value.id,
+    title: value.title,
+    completed: value.completed,
+    createdAt: typeof value.createdAt === "number" ? value.createdAt : 0,
+    dueDate: typeof value.dueDate === "number" ? value.dueDate : null,
+    completedAt: typeof value.completedAt === "number" ? value.completedAt : null,
+  }
 }
 
 function readStorage(): Task[] {
@@ -36,7 +52,10 @@ function readStorage(): Task[] {
       return EMPTY
     }
     const parsed = JSON.parse(raw) as unknown
-    return Array.isArray(parsed) ? parsed.filter(isTask) : EMPTY
+    if (!Array.isArray(parsed)) {
+      return EMPTY
+    }
+    return parsed.filter(isTaskLike).map(normalize)
   } catch {
     return EMPTY
   }
@@ -85,7 +104,7 @@ export function getServerSnapshot(): Task[] {
   return EMPTY
 }
 
-export function addTask(title: string) {
+export function addTask(title: string, dueDate: number | null = null) {
   const trimmed = title.trim()
   if (!trimmed) {
     return
@@ -97,6 +116,8 @@ export function addTask(title: string) {
       title: trimmed,
       completed: false,
       createdAt: Date.now(),
+      dueDate,
+      completedAt: null,
     },
     ...cache,
   ])
@@ -106,7 +127,13 @@ export function toggleTask(id: string) {
   ensureInitialized()
   commit(
     cache.map((task) =>
-      task.id === id ? { ...task, completed: !task.completed } : task
+      task.id === id
+        ? {
+            ...task,
+            completed: !task.completed,
+            completedAt: !task.completed ? Date.now() : null,
+          }
+        : task
     )
   )
 }
