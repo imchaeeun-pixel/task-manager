@@ -1,7 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { Check, Plus, Trash2 } from "lucide-react"
+import {
+  Check,
+  ClipboardList,
+  ListTodo,
+  Plus,
+  Trash2,
+} from "lucide-react"
 
 import type { TaskFilter } from "@/lib/types"
 import { useTasks } from "@/hooks/use-tasks"
@@ -20,8 +26,10 @@ export function TaskManager() {
   const [draft, setDraft] = React.useState("")
   const [filter, setFilter] = React.useState<TaskFilter>("all")
 
-  const remaining = tasks.filter((task) => !task.completed).length
-  const completed = tasks.length - remaining
+  const total = tasks.length
+  const completed = tasks.filter((task) => task.completed).length
+  const remaining = total - completed
+  const pct = total === 0 ? 0 : Math.round((completed / total) * 100)
 
   const visibleTasks = tasks.filter((task) => {
     if (filter === "active") return !task.completed
@@ -38,9 +46,34 @@ export function TaskManager() {
   return (
     <div className="tm">
       <header className="tm__header">
-        <h1 className="tm__title">할 일 관리</h1>
-        <span className="tm__count">{remaining}개 남음</span>
+        <div className="tm__logo">
+          <ListTodo />
+        </div>
+        <div className="tm__heading">
+          <h1 className="tm__title">할 일 관리</h1>
+          <p className="tm__subtitle">
+            {total === 0
+              ? "오늘 할 일을 추가해 보세요"
+              : `${remaining}개 남음 · 총 ${total}개`}
+          </p>
+        </div>
       </header>
+
+      <section className="tm__progress" aria-hidden={total === 0}>
+        <div className="tm__progress-top">
+          <span>진행률</span>
+          <span className="tm__progress-pct">{pct}%</span>
+        </div>
+        <div
+          className="tm__progress-track"
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
+          <div className="tm__progress-fill" style={{ width: `${pct}%` }} />
+        </div>
+      </section>
 
       <form onSubmit={handleSubmit} className="tm__form">
         <input
@@ -57,17 +90,21 @@ export function TaskManager() {
       </form>
 
       <div className="tm__toolbar">
-        <div className="tm__filters">
+        <div className="tm__filters" role="tablist">
           {FILTERS.map((item) => (
-            <Button
+            <button
               key={item.value}
               type="button"
-              size="sm"
-              variant={filter === item.value ? "secondary" : "ghost"}
+              role="tab"
+              aria-selected={filter === item.value}
+              className={cn(
+                "tm__filter",
+                filter === item.value && "tm__filter--active"
+              )}
               onClick={() => setFilter(item.value)}
             >
               {item.label}
-            </Button>
+            </button>
           ))}
         </div>
         {completed > 0 && (
@@ -87,6 +124,7 @@ export function TaskManager() {
           <li className="tm__empty">불러오는 중…</li>
         ) : visibleTasks.length === 0 ? (
           <li className="tm__empty">
+            <ClipboardList />
             {tasks.length === 0
               ? "아직 할 일이 없습니다. 위에서 추가해 보세요!"
               : "해당하는 할 일이 없습니다."}
@@ -131,6 +169,10 @@ export function TaskManager() {
           ))
         )}
       </ul>
+
+      <p className="tm__hint">
+        <kbd>d</kbd> 키로 다크 모드를 켜고 끌 수 있어요
+      </p>
     </div>
   )
 }
